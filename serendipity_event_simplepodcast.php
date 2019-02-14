@@ -118,7 +118,7 @@ class serendipity_event_simplepodcast extends serendipity_event {
 
         $podcastPath = $serendipity['serendipityHTTPPath'] . $serendipity['uploadHTTPPath'] . 'podcasts/';
         
-        $pattern = "@href=[\"'](?<link>$podcastPath.+)[\"']([^>]*)><!-- s9ymdb:(?<id>\d+) -->@U";
+        $pattern = "@href=[\"'](?<link>[^\"']*$podcastPath.+)[\"']([^>]*)><!-- s9ymdb:(?<id>\d+) -->@U";
         preg_match_all($pattern, $text, $matches);
         return $matches;
     }
@@ -127,9 +127,10 @@ class serendipity_event_simplepodcast extends serendipity_event {
         global $serendipity;
 
         $podcastPath = $serendipity['serendipityHTTPPath'] . $serendipity['uploadHTTPPath'] . 'podcasts/';
-        // If body or extended body contain link to file in uploads/podcast
+       
         
         $matches = $this->getPodcastLinks($text);
+         // If body or extended body contain link to file in uploads/podcast
         if ($matches['link'][0] !== null) {
             // Enter here only if we found a podcast link
             // But we also need some meta tags
