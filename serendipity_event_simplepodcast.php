@@ -94,9 +94,9 @@ class serendipity_event_simplepodcast extends serendipity_event {
                 case 'frontend_display:rss-2.0:per_entry':
                 case 'frontend_display:rss-1.0:per_entry':
                 case 'frontend_display:rss-0.91:per_entry':
-                    $links = $this->getPodcastLinks($eventData['body']);
-                    if ($links[0] !== null) {
-                        $link = $links[0];
+                    $matches = $this->getPodcastLinks($eventData['body']);
+                    if ($matches['link'][0] !== null) {
+                        $link = $matches['link'][0];
                         $filetype = preg_replace("@.+\.(....?)@", "$1", $link);
                         $eventData['display_dat'] = "<enclosure url=\"$link\" type=\"audio/$filetype\" />";
                     }
@@ -110,9 +110,17 @@ class serendipity_event_simplepodcast extends serendipity_event {
         }
     }
 
+    /**
+     * Return $matches with the ids and links of all podcast links
+     * */
     function getPodcastLinks($text) {
-        preg_match_all("@<a[^>]+href=[\"'](?<link>$podcastPath.+)[\"']@U", $text, $matches);
-        return $matches['link'];
+        global $serendipity;
+
+        $podcastPath = $serendipity['serendipityHTTPPath'] . $serendipity['uploadHTTPPath'] . 'podcasts/';
+        
+        $pattern = "@href=[\"'](?<link>$podcastPath.+)[\"']([^>]*)><!-- s9ymdb:(?<id>\d+) -->@U";
+        preg_match_all($pattern, $text, $matches);
+        return $matches;
     }
 
     function podlove_markup($text, $entry) {
@@ -121,22 +129,23 @@ class serendipity_event_simplepodcast extends serendipity_event {
         $podcastPath = $serendipity['serendipityHTTPPath'] . $serendipity['uploadHTTPPath'] . 'podcasts/';
         // If body or extended body contain link to file in uploads/podcast
         
-        $links = $this->getPodcastLinks($text);
-        if ($links[0] !== null) {
+        $matches = $this->getPodcastLinks($text);
+        if ($matches['link'][0] !== null) {
             // Enter here only if we found a podcast link
             // But we also need some meta tags
-            $config = $this->generateConfig($entry, $links);
+            $config = $this->generateConfig($entry, $matches);
 
             // We add a script tag initializing the podlove webplayer for all those links
-            $script = "<div id=\"example\"></div><script>
-                podlovePlayer('#example', $config);
+            $ids = join('_', $matches['id']);
+            $script = "<div id=\"podcastplayer_$ids\"></div><script>
+                podlovePlayer('#podcastplayer_$ids', $config);
             </script>";
         }
 
         return $text . $script;
     }
 
-    function generateConfig($entry, $links) {
+    function generateConfig($entry, $matches) {
         global $serendipity;
 
         #TODO: Get file properties by reading the id3 tags etc by reading the file on disk
@@ -156,7 +165,7 @@ class serendipity_event_simplepodcast extends serendipity_event {
             url: $url
         },
         audio: [";
-        foreach ($links as $link) {
+        foreach ($matches['link'] as $link) {
             $filetype = preg_replace("@.+\.(....?)@", "$1", $link);
             $out .= "{
               url: '$link',
