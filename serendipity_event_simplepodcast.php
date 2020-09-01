@@ -16,17 +16,17 @@ class serendipity_event_simplepodcast extends serendipity_event {
         $propbag->add('description',   PLUGIN_EVENT_SIMPLEPODCAST_DESC);
         $propbag->add('stackable',     false);
         $propbag->add('author',        'onli');
-        $propbag->add('version',       '0.1');
+        $propbag->add('version',       '0.2');
         $propbag->add('requirements',  array(
             'serendipity' => '2.1'
         ));
         $propbag->add('event_hooks',   array('frontend_display' => true,
-                                                'frontend_header' => true,
-                                                'frontend_display:rss-2.0:per_entry' => true,
-                                                'frontend_display:rss-1.0:per_entry' => true,
-                                                'frontend_display:rss-0.91:per_entry' => true
-                                            ));
-        $propbag->add('groups', array('MARKUP'));
+                                            'js' => true,
+                                            'frontend_display:rss-2.0:per_entry' => true,
+                                            'frontend_display:rss-1.0:per_entry' => true,
+                                            'frontend_display:rss-0.91:per_entry' => true
+                                        ));
+        $propbag->add('groups', array('FRONTEND_FEATURES'));
 
         $this->markup_elements = array(
             array(
@@ -86,11 +86,9 @@ class serendipity_event_simplepodcast extends serendipity_event {
                         }
                     }
                     return true;
-                    break;
-                case 'frontend_header':
-                        echo '<script src="https://cdn.podlove.org/web-player/embed.js"></script>';
+                case 'js':
+                    echo file_get_contents(dirname(__FILE__) . '/podlove/embed.js');
                     return true;
-                    break;
                 case 'frontend_display:rss-2.0:per_entry':
                 case 'frontend_display:rss-1.0:per_entry':
                 case 'frontend_display:rss-0.91:per_entry':
@@ -101,7 +99,6 @@ class serendipity_event_simplepodcast extends serendipity_event {
                         $eventData['display_dat'] = "<enclosure url=\"$link\" type=\"audio/$filetype\" />";
                     }
                     return true;
-                    break;
                 default:
                     return false;
             }
@@ -127,7 +124,6 @@ class serendipity_event_simplepodcast extends serendipity_event {
         global $serendipity;
 
         $podcastPath = $serendipity['serendipityHTTPPath'] . $serendipity['uploadHTTPPath'] . 'podcasts/';
-       
         
         $matches = $this->getPodcastLinks($text);
          // If body or extended body contain link to file in uploads/podcast
@@ -185,25 +181,6 @@ class serendipity_event_simplepodcast extends serendipity_event {
         }]
     }";
         return $out;
-    }
-
-    
-
-    function debugMsg($msg) {
-        global $serendipity;
-        
-        $this->debug_fp = @fopen ( $serendipity ['serendipityPath'] . 'templates_c/pluginname.log', 'a' );
-        if (! $this->debug_fp) {
-            return false;
-        }
-        
-        if (empty ( $msg )) {
-            fwrite ( $this->debug_fp, "failure \
-" );
-        } else {
-            fwrite ( $this->debug_fp, print_r ( $msg, true ) );
-        }
-        fclose ( $this->debug_fp );
     }
 
 }
